@@ -25,4 +25,4 @@ build({
     }
 }).catch(() => process.exit(1));
 
-execSync('cd dist && tar -czvf ../berry.tar.gz *', {cwd: process.cwd()});
+// execSync('cd dist && tar -czvf ../berry.tar.gz *', {cwd: process.cwd()});
