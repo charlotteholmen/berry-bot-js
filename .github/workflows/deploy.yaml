@@ -15,41 +15,41 @@ env:
   APPLICATION_ID: ${{ secrets.APPLICATION_ID }}
 
 jobs:
-#   build: 
-#     if: github.event_name == 'push'
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: checkout code
-#         uses: actions/checkout@v3
-#       - name: configure aws credentials
-#         uses: aws-actions/configure-aws-credentials@v3
-#         with:
-#           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ secrets.AWS_DEPLOY_ROLE }}
-#           role-session-name: berry-bot-deploy
-#           aws-region: ${{ env.AWS_REGION }}
-#       - name: login to ecr
-#         uses: aws-actions/amazon-ecr-login@v2
-#       - name: pnpm setup
-#         uses: pnpm/action-setup@v4
-#       - name: node setup
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version-file: package.json
-#           cache:             pnpm
-#       - name: install
-#         run:  pnpm install
-#     #   - name: types
-#     #     run:  pnpm run types
-#     #   - name: lint
-#     #     run:  pnpm run lint
-#       - name: build
-#         run:  pnpm run build
-#       - name: docker build
-#         run: docker build -f Dockerfile -t berry-bot:${{ github.sha }} .
-#       - name: docker tag
-#         run: docker tag berry-bot:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
-#       - name: push docker to ecr
-#         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
+  build: 
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_NUMBER }}:role/${{ secrets.AWS_DEPLOY_ROLE }}
+          role-session-name: berry-bot-deploy
+          aws-region: ${{ env.AWS_REGION }}
+      - name: login to ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: pnpm setup
+        uses: pnpm/action-setup@v4
+      - name: node setup
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache:             pnpm
+      - name: install
+        run: pnpm install
+    #   - name: types
+    #     run:  pnpm run types
+    #   - name: lint
+    #     run:  pnpm run lint
+      - name: build
+        run: pnpm run build
+      - name: docker build
+        run: docker build -f Dockerfile -t berry-bot:${{ github.sha }} .
+      - name: docker tag
+        run: docker tag berry-bot:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
+      - name: push docker to ecr
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
   terraform-plan:
     # needs: build
     runs-on: ubuntu-latest
