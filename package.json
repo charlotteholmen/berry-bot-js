@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "description": "",
     "main": "index.ts",
+    "packageManager": "pnpm@9.15.0",
     "scripts": {
         "start": "npx tsx --env-file=.env.local src/index.ts",
         "start:prod": "npx tsx --env-file=.env src/index.ts",
