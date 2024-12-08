@@ -7,7 +7,7 @@ resource "aws_ecr_repository" "berry_bot_repo" {
   }
 }
 
-resource "aws_ecr_lifecycle_policy" "bery_bot_lifecycle" {
+resource "aws_ecr_lifecycle_policy" "berry_bot_lifecycle" {
   repository = aws_ecr_repository.berry_bot_repo.name
 
   policy = <<EOF
@@ -15,12 +15,12 @@ resource "aws_ecr_lifecycle_policy" "bery_bot_lifecycle" {
     "rules": [
         {
             "rulePriority": 1,
-            "description": "expire images older than 10 days",
-            "selection" = {
-              "tagStatus" = "any"
-              "countType" = "imageCountMoreThan"
-              "count"     = 10
-            }
+            "description": "Keep last 10 images",
+            "selection": {
+                "tagStatus": "any",
+                "countType": "imageCountMoreThan",
+                "countNumber": 30
+            },
             "action": {
                 "type": "expire"
             }
