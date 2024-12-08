@@ -7,7 +7,7 @@ build({
     outdir: 'dist',
     format: 'cjs',
     platform: 'node',
-    target: 'node20.10',
+    target: 'node22.12',
     bundle: true,
     minifySyntax: true,
     minifyWhitespace: true,
