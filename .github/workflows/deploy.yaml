@@ -11,6 +11,8 @@ permissions:
   contents: read 
 env: 
   AWS_REGION: "us-east-1"
+  TOKEN: ${{ secrets.TOKEN }}
+  APPLICATION_D: ${{ secrets.APPLICATION_ID }}
 
 jobs:
   build: 
