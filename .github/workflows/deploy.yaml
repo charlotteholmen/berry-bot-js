@@ -12,7 +12,7 @@ permissions:
 env: 
   AWS_REGION: "us-east-1"
   TOKEN: ${{ secrets.TOKEN }}
-  APPLICATION_D: ${{ secrets.APPLICATION_ID }}
+  APPLICATION_ID: ${{ secrets.APPLICATION_ID }}
 
 jobs:
   build: 
