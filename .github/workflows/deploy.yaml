@@ -47,11 +47,10 @@ jobs:
       - name: docker build
         run: docker build -f Dockerfile -t berry-bot:${{ github.sha }} .
       - name: docker tag
-        run: docker tag berry-bot:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
+        run: docker tag berry-bot:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
       - name: push docker to ecr
-        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
+        run: docker push ${{ secrets.AWS_ACCOUNT_NUMBER }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot:${{ github.sha }}
   terraform-plan:
-    # needs: build
     runs-on: ubuntu-latest
     container: hashicorp/terraform:1.9.3 
     steps:
