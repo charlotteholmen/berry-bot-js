@@ -19,9 +19,9 @@ build({
     define: {
         'process.env.TOKEN': JSON.stringify(process.env.TOKEN),
         'process.env.APPLICATION_ID': JSON.stringify(process.env.APPLICATION_ID),
-        'process.env.MINECRAFT_INSTANCE': JSON.stringify(process.env.MINECRAFT_INSTANCE),
-        'process.env.FACTORIO_INSTANCE': JSON.stringify(process.env.FACTORIO_INSTANCE),
-        'process.env.GRUG_INSTANCE': JSON.stringify(process.env.GRUG_INSTANCE),
+        // 'process.env.MINECRAFT_INSTANCE': JSON.stringify(process.env.MINECRAFT_INSTANCE),
+        // 'process.env.FACTORIO_INSTANCE': JSON.stringify(process.env.FACTORIO_INSTANCE),
+        // 'process.env.GRUG_INSTANCE': JSON.stringify(process.env.GRUG_INSTANCE),
     }
 }).catch(() => process.exit(1));
 
