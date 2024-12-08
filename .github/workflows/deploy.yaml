@@ -44,7 +44,7 @@ jobs:
       - name: build
         run:  pnpm run build
       - name: docker build
-        run: docker build -t berry-bot-js:${{ github.sha }}
+        run: docker build -f Dockerfile -t berry-bot-js:${{ github.sha }}
       - name: docker tag
         run: docker tag berry-bot-js:${{ github.sha }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/berry-bot-js:${{ github.sha }}
       - name: push docker to ecr
