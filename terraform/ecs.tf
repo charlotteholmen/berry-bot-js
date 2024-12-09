@@ -41,10 +41,6 @@ resource "aws_iam_role" "berry_bot_ecs_task_execution" {
       }
     ]
   })
-
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  ]
 }
 
 resource "aws_instance" "ecs_instance" {
