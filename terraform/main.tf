@@ -3,7 +3,7 @@ provider "aws" {
 
     default_tags {
         tags = {
-            Name = "portfolio-v2"
+            Name = "berry-bot-js"
             git_url = "https://github.com/jhayashi1/berry-bot-js"
         }
     }
