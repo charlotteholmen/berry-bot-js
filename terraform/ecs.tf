@@ -46,7 +46,7 @@ resource "aws_iam_role" "berry_bot_ecs_task_execution" {
 resource "aws_instance" "ecs_instance" {
   ami                    = "ami-0c55b159cbfafe1f0" 
   instance_type          = "t2.nano"
-  subnet_id              = data.aws_subnets.ipv6_subnets
+  subnet_id              = tolist(data.aws_subnets.ipv6_subnets)[0]
   associate_public_ip_address = true
   security_groups        = [aws_security_group.berry_bot_ecs_sg.name]
 
