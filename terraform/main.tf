@@ -26,5 +26,5 @@ data "aws_subnets" "ipv6_subnets" {
 }
 
 output "test" {
-    value = aws_subnets.ipv6_subnets
+    value = data.aws_subnets.ipv6_subnets
 }
