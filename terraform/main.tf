@@ -24,3 +24,7 @@ data "aws_subnets" "ipv6_subnets" {
         Name = "ipv6-only-*"
     }
 }
+
+output "test" {
+    value = aws_subnets.ipv6_subnets
+}
