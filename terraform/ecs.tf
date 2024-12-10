@@ -78,7 +78,7 @@ resource "aws_autoscaling_group" "ecs_asg" {
   min_size            = 1
 
   launch_template {
-    id      = aws_launch_template.ecs_instance
+    id      = aws_launch_template.ecs_instance.id
     version = "$Latest"
   }
 }
