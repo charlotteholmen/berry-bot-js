@@ -5,17 +5,17 @@ import type {Command, McStatusResp} from '../types';
 
 const ec2 = new EC2Client({region: 'us-east-1'});
 
-const actions = [
+const ACTIONS = [
     {name: 'start', description: 'Start game server'},
     {name: 'stop', description: 'Stop game server'},
     {name: 'status', description: 'Get game server status'},
     {name: 'players', description: 'Get players on minecraft server'},
 ];
 
-const servers = [
-    {name: 'minecraft', value: process.env.MINECRAFT_INSTANCE ?? ''},
-    {name: 'factorio', value: process.env.FACTORIO_INSTANCE ?? ''},
-    {name: 'grug', value: process.env.GRUG_INSTANCE ?? ''},
+const SERVERS = [
+    {name: 'minecraft', value: process.env.MINECRAFT_INSTANCE ?? '0'},
+    {name: 'factorio', value: process.env.FACTORIO_INSTANCE ?? '0'},
+    {name: 'grug', value: process.env.GRUG_INSTANCE ?? '0'},
 ];
 
 const startInstanceAndWait = async (instanceId: string): Promise<string> => {
@@ -123,18 +123,15 @@ const createServerCommand = (): SlashCommandSubcommandsOnlyBuilder => {
         .setName('server')
         .setDescription('Perform actions on game servers');
 
-    actions.forEach((action) => (
+    ACTIONS.forEach((action) => (
         command.addSubcommand((subcommand) => (
             subcommand.setName(action.name)
                 .setDescription(action.description)
                 .addStringOption((option) => {
                     option.setName('target')
                         .setDescription('Target Game Server')
-                        .setRequired(true);
-
-                    servers.forEach((server) => {
-                        option.addChoices(server);
-                    });
+                        .setRequired(true)
+                        .addChoices(...SERVERS);
 
                     return option;
                 })

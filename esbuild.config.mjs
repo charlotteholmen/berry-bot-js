@@ -11,7 +11,7 @@ build({
     bundle: true,
     minifySyntax: true,
     minifyWhitespace: true,
-    minifyIdentifiers: true,
+    minifyIdentifiers: false,
     keepNames: true,
     sourcemap: true,
     sourcesContent: false,
