@@ -6,18 +6,18 @@ resource "aws_security_group" "berry_bot_ecs_sg" {
   vpc_id = data.aws_vpc.ipv6_only.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
@@ -43,14 +43,23 @@ resource "aws_iam_role" "berry_bot_ecs_task_execution" {
   })
 }
 
-resource "aws_instance" "ecs_instance" {
-  ami                    = "ami-0c55b159cbfafe1f0" 
-  instance_type          = "t2.nano"
-  subnet_id              = data.aws_subnets.ipv6_subnets.ids[0]
-  associate_public_ip_address = true
-  security_groups        = [aws_security_group.berry_bot_ecs_sg.name]
+resource "aws_launch_template" "ecs_instance" {
+  image_id      = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.nano"
+  network_interfaces {
+    subnet_id                   = data.aws_subnets.ipv6_subnets.ids[0]
+    associate_public_ip_address = true
+    ipv6_address_count          = 1
+    security_groups             = [aws_security_group.berry_bot_ecs_sg.name]
+  }
 
-  ipv6_address_count = 1
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size = 4
+      volume_type = "gp3"
+    }
+  }
 
   user_data = <<-EOF
               #!/bin/bash
@@ -62,6 +71,18 @@ resource "aws_instance" "ecs_instance" {
   }
 }
 
+resource "aws_autoscaling_group" "ecs_asg" {
+  vpc_zone_identifier = data.aws_subnets.ipv6_subnets.ids
+  desired_capacity    = 1
+  max_size            = 1
+  min_size            = 1
+
+  launch_template {
+    id      = aws_launch_template.ecs_instance
+    version = "$Latest"
+  }
+}
+
 resource "aws_ecs_task_definition" "main" {
   family                   = "my-task"
   network_mode             = "awsvpc"
@@ -70,8 +91,8 @@ resource "aws_ecs_task_definition" "main" {
 
   container_definitions = jsonencode([
     {
-      name  = "berry-bot-container",
-      image = "<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/berry-bot:latest",
+      name      = "berry-bot-container",
+      image     = "${var.aws_account_id}.dkr.ecr.us-east-1.amazonaws.com/berry-bot:latest",
       essential = true,
       portMappings = [
         {
@@ -79,8 +100,6 @@ resource "aws_ecs_task_definition" "main" {
           hostPort      = 80
         }
       ],
-      memory = 128,
-      cpu    = 128
     }
   ])
 }
