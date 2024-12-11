@@ -5,7 +5,7 @@ resource "aws_launch_template" "ecs_instance" {
     subnet_id                   = data.aws_subnets.ipv6_subnets.ids[0]
     associate_public_ip_address = true
     ipv6_address_count          = 1
-    security_groups             = [aws_security_group.ecs_sg.name]
+    security_groups             = [aws_security_group.ecs_sg.id]
   }
 
   block_device_mappings {
