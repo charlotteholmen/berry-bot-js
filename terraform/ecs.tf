@@ -88,11 +88,11 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
 #   }
 # }
 
-resource "aws_ecs_task_definition" "main" {
-  family                   = "my-task"
+resource "aws_ecs_task_definition" "ecs_task_definition" {
+  family                   = "berry-bot"
   network_mode             = "awsvpc"
   requires_compatibilities = ["EC2"]
-  execution_role_arn       = aws_iam_role.berry_bot_ecs_task_execution.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
@@ -109,10 +109,10 @@ resource "aws_ecs_task_definition" "main" {
   ])
 }
 
-# resource "aws_ecs_service" "main" {
+# resource "aws_ecs_service" "ecs_service" {
 #   name            = "my-service"
 #   cluster         = aws_ecs_cluster.berry_bot_cluster.id
-#   task_definition = aws_ecs_task_definition.main.arn
+#   task_definition = aws_ecs_task_definition.ecs_task_definition.arn
 #   desired_count   = 1
 #   launch_type     = "EC2"
 #   network_configuration {
