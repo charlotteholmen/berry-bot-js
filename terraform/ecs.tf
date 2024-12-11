@@ -74,7 +74,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
 }
 
 resource "aws_ecs_service" "ecs_service" {
-  name            = "my-service"
+  name            = "berry-bot-service"
   cluster         = aws_ecs_cluster.berry_bot_cluster.id
   task_definition = aws_ecs_task_definition.ecs_task_definition.arn
   desired_count   = 1
