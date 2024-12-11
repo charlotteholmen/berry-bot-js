@@ -28,6 +28,7 @@ resource "aws_launch_template" "ecs_instance" {
 }
 
 resource "aws_autoscaling_group" "ecs_asg" {
+  name                = "berry-bot-asg"
   vpc_zone_identifier = data.aws_subnets.ipv6_subnets.ids
   desired_capacity    = 1
   max_size            = 1
@@ -36,5 +37,11 @@ resource "aws_autoscaling_group" "ecs_asg" {
   launch_template {
     id      = aws_launch_template.ecs_instance.id
     version = "$Latest"
+  }
+
+  tag {
+    key = "Name"
+    value = "berry-bot"
+    propagate_at_launch = true
   }
 }
