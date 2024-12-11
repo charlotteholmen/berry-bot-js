@@ -1,5 +1,5 @@
 resource "aws_launch_template" "ecs_instance" {
-  name          = "berry-bot-launch template"
+  name          = "berry-bot-launch-template"
   image_id      = "ami-08eec49a05b603ba3"
   instance_type = "t2.nano"
   network_interfaces {
