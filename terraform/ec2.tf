@@ -1,7 +1,7 @@
 resource "aws_launch_template" "ecs_instance" {
   name          = "berry-bot-launch-template"
   image_id      = "ami-08eec49a05b603ba3"
-  instance_type = "t2.nano"
+  instance_type = "t4g.nano"
   network_interfaces {
     subnet_id                   = data.aws_subnets.ipv6_subnets.ids[0]
     associate_public_ip_address = true
@@ -12,7 +12,7 @@ resource "aws_launch_template" "ecs_instance" {
   block_device_mappings {
     device_name = "/dev/xvda"
     ebs {
-      volume_size = 8
+      volume_size = 30
       volume_type = "gp3"
     }
   }
