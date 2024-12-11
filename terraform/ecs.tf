@@ -121,7 +121,7 @@ resource "aws_ecs_service" "ecs_service" {
   launch_type     = "EC2"
   network_configuration {
     subnets          = data.aws_subnets.ipv6_subnets.ids
-    security_groups  = [aws_security_group.berry_bot_ecs_sg.id]
+    security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = false
   }
 }
