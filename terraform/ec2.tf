@@ -1,6 +1,6 @@
 resource "aws_launch_template" "ecs_instance" {
   name          = "berry-bot-launch-template"
-  image_id      = "ami-04a95f47496c803a3"
+  image_id      = "ami-08eec49a05b603ba3"
   instance_type = "t2.nano"
   network_interfaces {
     subnet_id                   = data.aws_subnets.ipv6_subnets.ids[0]
