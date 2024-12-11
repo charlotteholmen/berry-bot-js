@@ -1,5 +1,5 @@
 resource "aws_launch_template" "ecs_instance" {
-  image_id      = "ami-0c55b159cbfafe1f0"
+  image_id      = "ami-08eec49a05b603ba3"
   instance_type = "t2.nano"
   network_interfaces {
     subnet_id                   = data.aws_subnets.ipv6_subnets.ids[0]
