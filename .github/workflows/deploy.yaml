@@ -1,15 +1,15 @@
 name: build and deploy
 on:
   push:
-    paths-ignore:
-      - 'README.md'   
     branches:
-      - main
+        - main
+    paths-ignore:
+        - '**/README.md'
   pull_request:
-    paths-ignore:
-      - 'README.md'   
     branches:
-      - main
+        - main
+    paths-ignore:
+        - '**/README.md'    
 permissions:
   id-token: write
   contents: read 
