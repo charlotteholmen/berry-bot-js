@@ -1,21 +1,27 @@
 import {SlashCommandBuilder} from 'discord.js';
-import type {ChatInputCommandInteraction, CommandInteractionOption, SlashCommandSubcommandsOnlyBuilder} from 'discord.js';
+import type {ChatInputCommandInteraction, CommandInteractionOption, InteractionResponse, SlashCommandSubcommandsOnlyBuilder, TextBasedChannel} from 'discord.js';
 import type {Command} from '../types';
 
-const addTrigger = async (options: readonly CommandInteractionOption[]): Promise<void> => {
+interface ActionProps {
+    options: readonly CommandInteractionOption[];
+    reply: InteractionResponse<boolean>;
+}
+
+const addTrigger = async (props: ActionProps): Promise<void> => {
     console.log('yuh');
 };
 
-const removeTrigger = async (options: readonly CommandInteractionOption[]): Promise<void> => {
+const removeTrigger = async (props: ActionProps): Promise<void> => {
     console.log('yuh');
 };
 
 // Could probably do a select menu here
-const listTriggers = async (options: readonly CommandInteractionOption[]): Promise<void> => {
-    console.log('yuh');
+const listTriggers = async (props: ActionProps): Promise<void> => {
+    const {options, reply} = props;
+    const collector = reply.createMessageComponentCollector();
 };
 
-const getTrigger = async (options: readonly CommandInteractionOption[]): Promise<void> => {
+const getTrigger = async (props: ActionProps): Promise<void> => {
     console.log('yuh');
 };
 
@@ -30,17 +36,13 @@ const ACTIONS = [
 const execute = async (interaction: ChatInputCommandInteraction): Promise<void> => {
     const subcommand = interaction.options.getSubcommand();
     const options = interaction.options.data.find((option) => option.name === subcommand)?.options ?? [];
-    let result = '';
-
-    await interaction.deferReply();
+    const reply = await interaction.deferReply();
 
     ACTIONS.forEach(({name, action}) => {
         if (subcommand === name) {
-            action(options);
+            action({options, reply});
         }
     });
-
-    interaction.editReply(result);
 };
 
 const createServerCommand = (): SlashCommandSubcommandsOnlyBuilder => {
