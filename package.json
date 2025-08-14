@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "description": "",
     "main": "index.ts",
+    "type": "module",
     "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
     "scripts": {
         "start": "npx tsx --env-file=.env.local src/index.ts",
@@ -22,6 +23,9 @@
     },
     "dependencies": {
         "@aws-sdk/client-ec2": "^3.866.0",
+        "@aws-sdk/client-opensearchserverless": "^3.864.0",
+        "@aws-sdk/credential-provider-node": "^3.864.0",
+        "@opensearch-project/opensearch": "^3.5.1",
         "discord.js": "^14.21.0"
     },
     "homepage": "https://github.com/jhayashi1/berry-bot-js#readme",
