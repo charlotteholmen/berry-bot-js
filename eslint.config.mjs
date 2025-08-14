@@ -1,4 +1,3 @@
-import react from 'eslint-plugin-react';
 import parser from '@typescript-eslint/parser';
 import stylistic from '@stylistic/eslint-plugin';
 import TypeScriptESLint from '@typescript-eslint/eslint-plugin';
@@ -69,17 +68,16 @@ const typescriptRules = {
 export default [
     {
         files          : ['**/*.js', '**/*.mjs'],
-        plugins        : {react},
         languageOptions: {
             parserOptions: {ecmaVersion: 'latest', sourceType: 'module'},
             globals      : {...globals.node, ...globals.es2021, ...globals.browser},
         },
-        rules  : {...commonRules, ...reactRules},
+        rules  : {...commonRules},
         ignores: ['dist/**'],
     },
     {
         files          : ['**/*.ts', '**/*.tsx'],
-        plugins        : {react, '@typescript-eslint': TypeScriptESLint, '@stylistic': stylistic},
+        plugins        : {'@typescript-eslint': TypeScriptESLint, '@stylistic': stylistic},
         languageOptions: {
             parser,
             parserOptions: {
@@ -91,7 +89,7 @@ export default [
             },
             globals: {...globals.node, ...globals.es2021, ...globals.browser},
         },
-        rules  : {...commonRules, ...typescriptRules, ...reactRules},
+        rules  : {...commonRules, ...typescriptRules},
         ignores: ['dist/**'],
     },
 ];

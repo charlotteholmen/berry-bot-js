@@ -1,10 +1,35 @@
-import {ChannelType, SlashCommandBuilder, TextChannel} from 'discord.js';
-import type {ChatInputCommandInteraction, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder} from 'discord.js';
-import type {Command, McStatusResp} from '../types';
+import {ChannelType, SlashCommandBuilder} from 'discord.js';
+import type {ChatInputCommandInteraction, Message, SlashCommandOptionsOnlyBuilder, TextChannel} from 'discord.js';
+import type {Command} from '../types';
+
+const MESSAGE_LIMIT = 10;
+
+const sendToOpenSearch = async (endpoint: string, message: Message): Promise<void> => {
+    const body = {
+        timestamp: message.createdAt,
+        username : message.author.username,
+        content  : message.content,
+        // embedding: ... // Add embedding if available
+    };
+    try {
+        const res = await fetch(`${endpoint}/discord-message-test/messages/_doc`, {
+            method : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            console.error('OpenSearch error:', await res.text());
+        }
+    } catch (err) {
+        console.error('Failed to send to OpenSearch:', err);
+    }
+};
 
 const execute = async (interaction: ChatInputCommandInteraction): Promise<void> => {
     const channel = interaction.options.getChannel('source') as TextChannel;
-    
+
     if (!channel || channel.type !== ChannelType.GuildText) {
         await interaction.reply('Please select a valid text channel');
         return;
@@ -12,49 +37,51 @@ const execute = async (interaction: ChatInputCommandInteraction): Promise<void> 
 
     await interaction.deferReply();
 
+
+    const endpoint = process.env.OPENSEARCH_ENDPOINT;
+    if (!endpoint) {
+        await interaction.editReply('OpenSearch endpoint not configured');
+        return;
+    }
+
     try {
         let messagesCount = 0;
-        // Fetch messages in batches of 100 (Discord.js limit)
         let lastId: string | undefined;
-        
-        while (true) {
-            const options: { limit: number; before?: string } = { limit: 100 };
-            if (lastId) options.before = lastId;
-            
-            const messages = await channel.messages.fetch(options);
-            if (messages.size === 0) break;
-            
-            messages.forEach(message => {
-                console.log(`[${message.createdAt}] ${message.author.username}: ${message.content}`);
-                messagesCount++;
-            });
-            
-            lastId = messages.last()?.id;
+        const options: { limit: number; before?: string } = {limit: MESSAGE_LIMIT};
+
+        if (lastId) {
+            options.before = lastId;
         }
-        
+
+        const messages = await channel.messages.fetch(options);
+
+        for (const message of messages.values()) {
+            await sendToOpenSearch(endpoint, message);
+            messagesCount++;
+        }
+
+        lastId = messages.last()?.id;
+
         await interaction.editReply(`Processed ${messagesCount} messages from channel: ${channel.name}`);
     } catch (error) {
         console.error('Error fetching messages:', error);
         await interaction.editReply('An error occurred while fetching messages');
     }
-
-    
-    await interaction.editReply(`Selected channel: ${channel.name}`);    
-}
+};
 
 const createIngestCommand = (): SlashCommandOptionsOnlyBuilder => {
     const command = new SlashCommandBuilder()
         .setName('ingest')
         .setDescription('Ingest messages from channel')
         .addChannelOption((option) => (
-                    option
-                        .setName('source')
-                        .setDescription('The channel to ingest messages from')
-                        .setRequired(true)
-                        .addChannelTypes(ChannelType.GuildText)
-                )
-            );
-    
+            option
+                .setName('source')
+                .setDescription('The channel to ingest messages from')
+                .setRequired(true)
+                .addChannelTypes(ChannelType.GuildText)
+        )
+        );
+
     return command;
 };
 
