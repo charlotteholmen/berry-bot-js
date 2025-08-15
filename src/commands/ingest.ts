@@ -1,27 +1,20 @@
 import {ChannelType, SlashCommandBuilder} from 'discord.js';
 import type {ChatInputCommandInteraction, Message, SlashCommandOptionsOnlyBuilder, TextChannel} from 'discord.js';
 import type {Command} from '../types';
+import {indexMessage} from '../common/opensearch';
 
 const MESSAGE_LIMIT = 10;
 
 const sendToOpenSearch = async (endpoint: string, message: Message): Promise<void> => {
     const body = {
-        timestamp: message.createdAt,
+        timestamp: message.createdAt.toISOString(),
         username : message.author.username,
         content  : message.content,
-        // embedding: ... // Add embedding if available
+        guild    : message.guild?.name ?? 'unknown',
     };
+
     try {
-        const res = await fetch(`${endpoint}/discord-message-test/messages/_doc`, {
-            method : 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-            console.error('OpenSearch error:', await res.text());
-        }
+        await indexMessage(body);
     } catch (err) {
         console.error('Failed to send to OpenSearch:', err);
     }

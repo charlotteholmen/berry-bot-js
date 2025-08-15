@@ -4,7 +4,7 @@ declare global {
             TOKEN: string;
             APPLICATION_ID: string;
             OPENSEARCH_ENDPOINT: string;
-            OPENSEARCH_COLLECTION_ID: string;
+            OPENSEARCH_INDEX: string;
             AWS_REGION: string;
         }
     }
