@@ -5,6 +5,7 @@ dist
 .env*
 
 deploy.sh
+test.ts
 
 *.tar.gz
 **/.terraform/*
