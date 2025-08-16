@@ -1,52 +1,43 @@
-resource "aws_opensearchserverless_collection" "discord" {
-  name        = "discord-message-test"
-  type        = "VECTOR_SEARCH"
-  description = "Test collection for Discord logs"
-}
-
-resource "aws_opensearchserverless_access_policy" "discord_access" {
-  name = "discord-access-policy"
-  type = "data"
-  policy = jsonencode({
-    Rules = [
+resource "aws_opensearch_domain" "discord_test" {
+	domain_name           = "discord-test"
+	engine_version        = "OpenSearch_2.19"
+	cluster_config {
+		instance_type          = "t3.small.search"
+		instance_count         = 1
+		zone_awareness_enabled = false
+	}
+	ebs_options {
+		ebs_enabled = true
+		volume_size = 10
+		volume_type = "gp3"
+	}
+	access_policies = <<POLICY
+  {
+    "Version": "2012-10-17",
+    "Statement": [
       {
-        Resource = ["collection/${aws_opensearchserverless_collection.discord.name}"]
-        Permission = ["aoss:APIAccessAll"]
-        Principal = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/main"]
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/main"
+        },
+        "Action": "es:*",
+        "Resource": "arn:aws:es:${aws_opensearch_domain.discord_test.arn}/*"
       }
     ]
-  })
-}
-
-resource "null_resource" "create_index" {
-  depends_on = [
-    aws_opensearchserverless_collection.discord,
-    aws_opensearchserverless_security_config.discord_access
-  ]
-
-  provisioner "local-exec" {
-    command = <<EOT
-curl -X PUT "https://YOUR_SERVERLESS_COLLECTION_ENDPOINT/discord-message-test/messages" \
-  -H 'Content-Type: application/json' \
-  -u YOUR_USER:YOUR_PASSWORD \
-  -d '{
-    "mappings": {
-      "properties": {
-        "timestamp": { "type": "date" },
-        "username":  { "type": "keyword" },
-        "content":   { "type": "text", "analyzer": "standard" },
-        "embedding": {
-          "type": "knn_vector",
-          "dimension": 1536,
-          "method": {
-            "name": "hnsw",
-            "space_type": "cosinesimil",
-            "engine": "nmslib"
-          }
-        }
-      }
-    }
-  }'
-EOT
   }
+  POLICY
+	domain_endpoint_options {
+		enforce_https = true
+		tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
+		custom_endpoint_enabled = false
+	}
+	node_to_node_encryption {
+		enabled = true
+	}
+	encrypt_at_rest {
+		enabled = true
+	}
+	advanced_security_options {
+		enabled = false
+	}
 }

@@ -2,8 +2,10 @@ import {ChannelType, SlashCommandBuilder} from 'discord.js';
 import type {ChatInputCommandInteraction, Message, SlashCommandOptionsOnlyBuilder, TextChannel} from 'discord.js';
 import type {Command} from '../types';
 import {indexMessage} from '../common/opensearch';
+import {readFileSync, writeFileSync} from 'fs';
 
 const MESSAGE_LIMIT = 10;
+const LAST_ID_FILE = 'last-id.txt';
 
 const sendToOpenSearch = async (endpoint: string, message: Message): Promise<void> => {
     const body = {
@@ -39,7 +41,14 @@ const execute = async (interaction: ChatInputCommandInteraction): Promise<void> 
 
     try {
         let messagesCount = 0;
-        let lastId: string | undefined;
+        let lastId: string;
+
+        try {
+            lastId = readFileSync(LAST_ID_FILE, 'utf8').trim();
+        } catch {
+            lastId = '';
+        }
+
         const options: { limit: number; before?: string } = {limit: MESSAGE_LIMIT};
 
         if (lastId) {
@@ -53,7 +62,8 @@ const execute = async (interaction: ChatInputCommandInteraction): Promise<void> 
             messagesCount++;
         }
 
-        lastId = messages.last()?.id;
+        lastId = messages.last()?.id ?? '';
+        writeFileSync(LAST_ID_FILE, lastId);
 
         await interaction.editReply(`Processed ${messagesCount} messages from channel: ${channel.name}`);
     } catch (error) {
