@@ -26,7 +26,8 @@
         "@aws-sdk/client-opensearchserverless": "^3.864.0",
         "@aws-sdk/credential-provider-node": "^3.864.0",
         "@opensearch-project/opensearch": "^3.5.1",
-        "discord.js": "^14.21.0"
+        "discord.js": "^14.21.0",
+        "openai": "^5.12.2"
     },
     "homepage": "https://github.com/jhayashi1/berry-bot-js#readme",
     "devDependencies": {

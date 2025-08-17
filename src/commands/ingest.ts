@@ -3,6 +3,7 @@ import type {ChatInputCommandInteraction, FetchMessagesOptions, Message, SlashCo
 import type {Command} from '../types';
 import {opensearch} from '../common/opensearch';
 import {readFileSync, writeFileSync} from 'fs';
+import {getEmbedding} from '../common/openai';
 
 const MESSAGE_LIMIT = 10;
 const LAST_ID_FILE = 'last-id.txt';
@@ -11,17 +12,21 @@ const sendBatchToOpenSearch = async (messages: Message[]): Promise<void> => {
     const body = [];
     for (const message of messages) {
         body.push({index: {_index: 'messages'}});
+        const embedding = await getEmbedding(message.content);
         body.push({
             timestamp: message.createdAt.toISOString(),
             username : message.author.username,
             content  : message.content,
             guild    : message.guild?.name ?? 'unknown',
+            embedding,
         });
     }
     try {
         const response = await opensearch.bulk({body});
         if (response.body.errors) {
             console.error('Bulk ingest errors:', response.body.items);
+        } else {
+            console.log(`successfully ingested ${messages.length} messages`);
         }
     } catch (err) {
         console.error('Failed to send batch to OpenSearch:', err);

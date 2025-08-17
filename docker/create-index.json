@@ -6,11 +6,27 @@
   },
   "mappings": {
     "properties": {
-      "timestamp": { "type": "date" },
-      "username": { "type": "keyword" },
-      "content": { "type": "text" },
-      "guild": { "type": "keyword" },
-      "embedding": { "type": "knn_vector", "dimension": 384 }
+      "timestamp": {
+        "type": "date"
+      },
+      "username": {
+        "type": "keyword"
+      },
+      "content": {
+        "type": "text"
+      },
+      "guild": {
+        "type": "keyword"
+      },
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 1536,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "nmslib"
+        }
+      }
     }
   }
 }

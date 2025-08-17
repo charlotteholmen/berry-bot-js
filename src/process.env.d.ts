@@ -9,6 +9,7 @@ declare global {
             LOCAL: string;
             LOCAL_OPENSEARCH_USERNAME: string;
             LOCAL_OPENSEARCH_PASSWORD: string;
+            OPENAI_API_KEY: string;
         }
     }
 }
