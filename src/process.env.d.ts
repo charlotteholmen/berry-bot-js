@@ -6,6 +6,9 @@ declare global {
             OPENSEARCH_ENDPOINT: string;
             OPENSEARCH_INDEX: string;
             AWS_REGION: string;
+            LOCAL: string;
+            LOCAL_OPENSEARCH_USERNAME: string;
+            LOCAL_OPENSEARCH_PASSWORD: string;
         }
     }
 }

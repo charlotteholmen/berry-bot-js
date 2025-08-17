@@ -11,15 +11,25 @@ interface IndexMessageReq {
     guild    : string;
 }
 
+const awsConfig = AwsSigv4Signer({
+    region        : process.env.AWS_REGION,
+    service       : 'aoss',
+    getCredentials: async () => {
+        const credentialsProvider = defaultProvider();
+        return await credentialsProvider();
+    },
+});
+
+const localConfig = {
+    ssl : {rejectUnauthorized: false},
+    auth: {
+        username: process.env.LOCAL_OPENSEARCH_USERNAME,
+        password: process.env.LOCAL_OPENSEARCH_PASSWORD,
+    },
+};
+
 export const opensearch = new Client({
-    ...AwsSigv4Signer({
-        region        : process.env.AWS_REGION,
-        service       : 'aoss',
-        getCredentials: async () => {
-            const credentialsProvider = defaultProvider();
-            return await credentialsProvider();
-        },
-    }),
+    ...(process.env.LOCAL ? localConfig : awsConfig),
     node: process.env.OPENSEARCH_ENDPOINT,
 });
 

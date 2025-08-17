@@ -1,8 +1,28 @@
+resource "aws_opensearch_index" "messages" {
+	domain_name = aws_opensearch_domain.discord_test.domain_name
+	name        = "messages"
+	body        = <<JSON
+{
+	"settings": {
+		"number_of_shards": 1,
+		"number_of_replicas": 0
+	},
+	"mappings": {
+		"properties": {
+			"timestamp": { "type": "date" },
+			"username": { "type": "keyword" },
+			"content": { "type": "text" },
+			"guild": { "type": "keyword" }
+		}
+	}
+}
+JSON
+}
 resource "aws_opensearch_domain" "discord_test" {
 	domain_name           = "discord-test"
 	engine_version        = "OpenSearch_2.19"
 	cluster_config {
-		instance_type          = "t3.small.search"
+		instance_type          = "t2.micro.search"
 		instance_count         = 1
 		zone_awareness_enabled = false
 	}
@@ -21,7 +41,7 @@ resource "aws_opensearch_domain" "discord_test" {
           "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/main"
         },
         "Action": "es:*",
-        "Resource": "arn:aws:es:${aws_opensearch_domain.discord_test.arn}/*"
+        "Resource": "*"
       }
     ]
   }
