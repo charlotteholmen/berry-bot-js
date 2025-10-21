@@ -22,12 +22,12 @@
         "url": "https://github.com/jhayashi1/berry-bot-js/issues"
     },
     "dependencies": {
-        "@aws-sdk/client-ec2": "3.866.0",
-        "@aws-sdk/client-opensearchserverless": "3.864.0",
-        "@aws-sdk/credential-provider-node": "3.864.0",
+        "@aws-sdk/client-ec2": "3.914.0",
+        "@aws-sdk/client-opensearchserverless": "3.914.0",
+        "@aws-sdk/credential-provider-node": "3.914.0",
         "@opensearch-project/opensearch": "3.5.1",
         "discord.js": "14.23.2",
-        "openai": "5.12.2"
+        "openai": "6.6.0"
     },
     "homepage": "https://github.com/jhayashi1/berry-bot-js#readme",
     "devDependencies": {
