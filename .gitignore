@@ -7,6 +7,7 @@ dist
 deploy.sh
 test.ts
 last-id.txt
+**/*.db
 
 *.tar.gz
 **/.terraform/*
