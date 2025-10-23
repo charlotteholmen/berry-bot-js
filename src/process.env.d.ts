@@ -10,7 +10,8 @@ declare global {
             LOCAL_OPENSEARCH_USERNAME: string;
             LOCAL_OPENSEARCH_PASSWORD: string;
             OPENAI_API_KEY: string;
-            SQLITE_DB_PATH?: string;
+            SQLITE_DB_PATH: string;
+            TEXT_EMBEDDING_MODEL: string;
         }
     }
 }

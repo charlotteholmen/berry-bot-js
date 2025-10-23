@@ -2,14 +2,13 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import {randomUUID} from 'crypto';
-import {getEmbedding} from './openai.js';
 
 export interface Message {
     id?: string;
     username: string;
     content: string;
     date: string; // ISO 8601 format
-    embedding: number[]; // text-embedding-3-small vector (1536 dimensions)
+    embedding?: number[]; // text-embedding-3-small vector (1536 dimensions)
 }
 
 export interface MessageInput {
@@ -37,91 +36,77 @@ class SQLiteDatabase {
         }
 
         this.db = new Database(dbPath);
-        this.initialize();
     }
 
-    private initialize(): void {
-    // Create messages table with all required fields
+    /**
+     * Get sanitized table name for guild
+     */
+    private getGuildTableName(guildId: string): string {
+        return `guild_${guildId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    }
+
+    /**
+     * Create table for a specific guild if it doesn't exist
+     */
+    createGuildTable(guildId: string): void {
+        const tableName = this.getGuildTableName(guildId);
+
         this.db.exec(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        username TEXT NOT NULL,
-        content TEXT NOT NULL,
-        date TEXT NOT NULL,
-        embedding TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+            CREATE TABLE IF NOT EXISTS ${tableName} (
+                id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                content TEXT NOT NULL,
+                date TEXT NOT NULL,
+                embedding TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
 
         // Create indexes for better query performance
         this.db.exec(`
-            CREATE INDEX IF NOT EXISTS idx_username ON messages(username);
-            CREATE INDEX IF NOT EXISTS idx_date ON messages(date);
-            CREATE INDEX IF NOT EXISTS idx_created_at ON messages(created_at);
+            CREATE INDEX IF NOT EXISTS idx_${tableName}_username ON ${tableName}(username);
+            CREATE INDEX IF NOT EXISTS idx_${tableName}_date ON ${tableName}(date);
+            CREATE INDEX IF NOT EXISTS idx_${tableName}_created_at ON ${tableName}(created_at);
         `);
     }
 
     /**
    * Insert a new message with embedding
    */
-    insertMessage(message: Message): string {
+    insertMessage(guildId: string, message: Message): string {
+        const tableName = this.getGuildTableName(guildId);
+        this.createGuildTable(guildId);
+
         const id = message.id || randomUUID();
         const stmt = this.db.prepare(`
-      INSERT INTO messages (id, username, content, date, embedding)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+            INSERT INTO ${tableName} (id, username, content, date, embedding)
+            VALUES (?, ?, ?, ?, ?)
+        `);
 
         stmt.run(
             id,
             message.username,
             message.content,
             message.date,
-            JSON.stringify(message.embedding)
+            JSON.stringify(message.embedding || [])
         );
 
         return id;
-    }
-
-    /**
-   * Insert a new message without embedding (stores empty array)
-   */
-    insertMessageWithoutEmbedding(messageInput: MessageInput): string {
-        const id = randomUUID();
-        const stmt = this.db.prepare(`
-      INSERT INTO messages (id, username, content, date, embedding)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-        stmt.run(
-            id,
-            messageInput.username,
-            messageInput.content,
-            messageInput.date,
-            JSON.stringify([])
-        );
-
-        return id;
-    }
-
-    /**
-   * Insert a new message with automatic embedding generation
-   */
-    async insertMessageWithEmbedding(messageInput: MessageInput): Promise<string> {
-        const embedding = await getEmbedding(messageInput.content);
-        return this.insertMessage({
-            ...messageInput,
-            embedding,
-        });
     }
 
     /**
    * Insert multiple messages in a transaction for better performance
    */
-    insertMessages(messages: Message[]): string[] {
+    insertMessages(guildId: string, messages: Message[]): string[] {
+        if (messages.length === 0) return [];
+
+        const tableName = this.getGuildTableName(guildId);
+        this.createGuildTable(guildId);
+
         const insert = this.db.prepare(`
-      INSERT INTO messages (id, username, content, date, embedding)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+            INSERT INTO ${tableName} (id, username, content, date, embedding)
+            VALUES (?, ?, ?, ?, ?)
+        `);
 
         const insertMany = this.db.transaction((msgs: Message[]) => {
             const ids: string[] = [];
@@ -132,7 +117,7 @@ class SQLiteDatabase {
                     msg.username,
                     msg.content,
                     msg.date,
-                    JSON.stringify(msg.embedding)
+                    JSON.stringify(msg?.embedding ?? [])
                 );
                 ids.push(id);
             }
@@ -143,100 +128,93 @@ class SQLiteDatabase {
     }
 
     /**
-   * Insert multiple messages with automatic embedding generation
-   */
-    async insertMessagesWithEmbedding(messageInputs: MessageInput[]): Promise<string[]> {
-        const messagesWithEmbeddings: Message[] = await Promise.all(
-            messageInputs.map(async (input) => ({
-                ...input,
-                embedding: await getEmbedding(input.content),
-            }))
-        );
-        return this.insertMessages(messagesWithEmbeddings);
-    }
-
-    /**
    * Get a message by ID
    */
-    getMessageById(id: string): Message | null {
+    getMessageById(guildId: string, id: string): Message | null {
+        const tableName = this.getGuildTableName(guildId);
         const stmt = this.db.prepare(`
-      SELECT id, username, content, date, embedding
-      FROM messages
-      WHERE id = ?
-    `);
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE id = ?
+        `);
 
         const row = stmt.get(id) as MessageRow | undefined;
-        return row ? this.parseMessageRow(row) : null;
+        return row ? this.parseMessageRow(guildId, row) : null;
     }
 
     /**
    * Get messages by username
    */
-    getMessagesByUsername(username: string, limit: number = 100): Message[] {
+    getMessagesByUsername(guildId: string, username: string, limit: number = 100): Message[] {
+        const tableName = this.getGuildTableName(guildId);
         const stmt = this.db.prepare(`
-      SELECT id, username, content, date, embedding
-      FROM messages
-      WHERE username = ?
-      ORDER BY date DESC
-      LIMIT ?
-    `);
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE username = ?
+            ORDER BY date DESC
+            LIMIT ?
+        `);
 
         const rows = stmt.all(username, limit) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(row));
+        return rows.map(row => this.parseMessageRow(guildId, row));
     }
 
     /**
    * Get messages within a date range
    */
-    getMessagesByDateRange(startDate: string, endDate: string, limit: number = 1000): Message[] {
+    getMessagesByDateRange(guildId: string, startDate: string, endDate: string, limit: number = 1000): Message[] {
+        const tableName = this.getGuildTableName(guildId);
         const stmt = this.db.prepare(`
-      SELECT id, username, content, date, embedding
-      FROM messages
-      WHERE date BETWEEN ? AND ?
-      ORDER BY date DESC
-      LIMIT ?
-    `);
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE date BETWEEN ? AND ?
+            ORDER BY date DESC
+            LIMIT ?
+        `);
 
         const rows = stmt.all(startDate, endDate, limit) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(row));
+        return rows.map(row => this.parseMessageRow(guildId, row));
     }
 
     /**
    * Get all messages with pagination
    */
-    getAllMessages(limit: number = 100, offset: number = 0): Message[] {
+    getAllMessages(guildId: string, limit: number = 100, offset: number = 0): Message[] {
+        const tableName = this.getGuildTableName(guildId);
         const stmt = this.db.prepare(`
-      SELECT id, username, content, date, embedding
-      FROM messages
-      ORDER BY date DESC
-      LIMIT ? OFFSET ?
-    `);
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            ORDER BY date DESC
+            LIMIT ? OFFSET ?
+        `);
 
         const rows = stmt.all(limit, offset) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(row));
+        return rows.map(row => this.parseMessageRow(guildId, row));
     }
 
     /**
    * Search messages by content (basic text search)
    */
-    searchMessages(searchTerm: string, limit: number = 50): Message[] {
+    searchMessages(guildId: string, searchTerm: string, limit: number = 50): Message[] {
+        const tableName = this.getGuildTableName(guildId);
         const stmt = this.db.prepare(`
-      SELECT id, username, content, date, embedding
-      FROM messages
-      WHERE content LIKE ?
-      ORDER BY date DESC
-      LIMIT ?
-    `);
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE content LIKE ?
+            ORDER BY date DESC
+            LIMIT ?
+        `);
 
         const rows = stmt.all(`%${searchTerm}%`, limit) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(row));
+        return rows.map(row => this.parseMessageRow(guildId, row));
     }
 
     /**
    * Get message count
    */
-    getMessageCount(): number {
-        const stmt = this.db.prepare('SELECT COUNT(*) as count FROM messages');
+    getMessageCount(guildId: string): number {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
         const result = stmt.get() as { count: number };
         return result.count;
     }
@@ -244,8 +222,9 @@ class SQLiteDatabase {
     /**
    * Get message count by username
    */
-    getMessageCountByUsername(username: string): number {
-        const stmt = this.db.prepare('SELECT COUNT(*) as count FROM messages WHERE username = ?');
+    getMessageCountByUsername(guildId: string, username: string): number {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName} WHERE username = ?`);
         const result = stmt.get(username) as { count: number };
         return result.count;
     }
@@ -253,8 +232,9 @@ class SQLiteDatabase {
     /**
    * Delete a message by ID
    */
-    deleteMessage(id: string): boolean {
-        const stmt = this.db.prepare('DELETE FROM messages WHERE id = ?');
+    deleteMessage(guildId: string, id: string): boolean {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`DELETE FROM ${tableName} WHERE id = ?`);
         const result = stmt.run(id);
         return result.changes > 0;
     }
@@ -262,8 +242,9 @@ class SQLiteDatabase {
     /**
    * Delete all messages by username
    */
-    deleteMessagesByUsername(username: string): number {
-        const stmt = this.db.prepare('DELETE FROM messages WHERE username = ?');
+    deleteMessagesByUsername(guildId: string, username: string): number {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`DELETE FROM ${tableName} WHERE username = ?`);
         const result = stmt.run(username);
         return result.changes;
     }
@@ -271,29 +252,19 @@ class SQLiteDatabase {
     /**
    * Update message embedding
    */
-    updateEmbedding(id: string, embedding: number[]): boolean {
-        const stmt = this.db.prepare('UPDATE messages SET embedding = ? WHERE id = ?');
+    updateEmbedding(guildId: string, id: string, embedding: number[]): boolean {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`UPDATE ${tableName} SET embedding = ? WHERE id = ?`);
         const result = stmt.run(JSON.stringify(embedding), id);
         return result.changes > 0;
     }
 
     /**
-   * Update message embedding by fetching from OpenAI
-   */
-    async updateEmbeddingFromContent(id: string): Promise<boolean> {
-        const message = this.getMessageById(id);
-        if (!message) {
-            return false;
-        }
-        const embedding = await getEmbedding(message.content);
-        return this.updateEmbedding(id, embedding);
-    }
-
-    /**
    * Get all embeddings for similarity search (returns id and embedding)
    */
-    getAllEmbeddings(): Array<{ id: string; embedding: number[] }> {
-        const stmt = this.db.prepare('SELECT id, embedding FROM messages');
+    getAllEmbeddings(guildId: string): Array<{ id: string; embedding: number[] }> {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`SELECT id, embedding FROM ${tableName}`);
         const rows = stmt.all() as Array<{ id: string; embedding: string }>;
         return rows.map(row => ({
             id       : row.id,
@@ -304,7 +275,7 @@ class SQLiteDatabase {
     /**
    * Helper function to parse database row to Message object
    */
-    private parseMessageRow(row: MessageRow): Message {
+    private parseMessageRow(guildId: string, row: MessageRow): Message {
         return {
             id       : row.id,
             username : row.username,
