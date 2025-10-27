@@ -6,7 +6,7 @@ const testDatabase = async (): Promise<void> => {
 
         console.log('Fetching 100 most recent records...\n');
 
-        const messages = db.getAllMessages('669712877447413760', 100, 0);
+        const messages = db.getAllMessages('177593112753995776', 100, 0);
 
         console.log(`Found ${messages.length} messages:\n`);
 
@@ -17,7 +17,7 @@ const testDatabase = async (): Promise<void> => {
             console.log('');
         });
 
-        console.log(`\nTotal messages in database: ${db.getMessageCount('669712877447413760')}`);
+        console.log(`\nTotal messages in database: ${db.getMessageCount('177593112753995776')}`);
 
         closeDatabase();
     } catch (error) {

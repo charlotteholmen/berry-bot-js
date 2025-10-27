@@ -36,6 +36,7 @@ class SQLiteDatabase {
         }
 
         this.db = new Database(dbPath);
+        this.createLastIngestedTable();
     }
 
     /**
@@ -43,6 +44,21 @@ class SQLiteDatabase {
      */
     private getGuildTableName(guildId: string): string {
         return `guild_${guildId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    }
+
+    /**
+     * Create table to track last ingested message per guild/channel
+     */
+    private createLastIngestedTable(): void {
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS last_ingested (
+                guild_id TEXT NOT NULL,
+                channel_id TEXT NOT NULL,
+                last_message_id TEXT NOT NULL,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (guild_id, channel_id)
+            )
+        `);
     }
 
     /**
@@ -283,6 +299,32 @@ class SQLiteDatabase {
             date     : row.date,
             embedding: JSON.parse(row.embedding),
         };
+    }
+
+    /**
+     * Get the last ingested message ID for a guild/channel
+     */
+    getLastIngestedId(guildId: string, channelId: string): string | null {
+        const stmt = this.db.prepare(`
+            SELECT last_message_id 
+            FROM last_ingested 
+            WHERE guild_id = ? AND channel_id = ?
+        `);
+        const result = stmt.get(guildId, channelId) as {last_message_id: string} | undefined;
+        return result?.last_message_id ?? null;
+    }
+
+    /**
+     * Set the last ingested message ID for a guild/channel
+     */
+    setLastIngestedId(guildId: string, channelId: string, messageId: string): void {
+        const stmt = this.db.prepare(`
+            INSERT INTO last_ingested (guild_id, channel_id, last_message_id, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(guild_id, channel_id) 
+            DO UPDATE SET last_message_id = ?, updated_at = CURRENT_TIMESTAMP
+        `);
+        stmt.run(guildId, channelId, messageId, messageId);
     }
 
     /**
