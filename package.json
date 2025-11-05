@@ -22,28 +22,28 @@
         "url": "https://github.com/jhayashi1/berry-bot-js/issues"
     },
     "dependencies": {
-        "@aws-sdk/client-ec2": "3.914.0",
-        "@aws-sdk/client-opensearchserverless": "3.914.0",
-        "@aws-sdk/credential-provider-node": "3.914.0",
+        "@aws-sdk/client-ec2": "3.925.0",
+        "@aws-sdk/client-opensearchserverless": "3.925.0",
+        "@aws-sdk/credential-provider-node": "3.925.0",
         "@opensearch-project/opensearch": "3.5.1",
         "better-sqlite3": "^12.4.1",
-        "discord.js": "14.23.2",
-        "openai": "6.6.0"
+        "discord.js": "14.24.2",
+        "openai": "6.8.1"
     },
     "homepage": "https://github.com/jhayashi1/berry-bot-js#readme",
     "devDependencies": {
-        "@aws-sdk/types": "3.914.0",
-        "@eslint/js": "9.38.0",
+        "@aws-sdk/types": "3.922.0",
+        "@eslint/js": "9.39.1",
         "@stylistic/eslint-plugin": "5.5.0",
         "@types/better-sqlite3": "^7.6.13",
-        "@types/node": "24.9.1",
-        "@typescript-eslint/eslint-plugin": "8.46.2",
-        "@typescript-eslint/parser": "8.46.2",
-        "esbuild": "0.25.11",
-        "eslint": "9.38.0",
+        "@types/node": "24.10.0",
+        "@typescript-eslint/eslint-plugin": "8.46.3",
+        "@typescript-eslint/parser": "8.46.3",
+        "esbuild": "0.25.12",
+        "eslint": "9.39.1",
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-perfectionist": "^4.15.1",
-        "globals": "16.4.0",
+        "globals": "16.5.0",
         "tsx": "^4.20.6",
         "typescript": "5.9.3"
     }
