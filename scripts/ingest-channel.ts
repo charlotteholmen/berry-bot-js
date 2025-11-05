@@ -1,5 +1,7 @@
-import {Client, GatewayIntentBits} from 'discord.js';
 import type {TextChannel} from 'discord.js';
+
+import {Client, GatewayIntentBits} from 'discord.js';
+
 import {ingestMessages} from '../src/commands/ingest.js';
 import {closeDatabase} from '../src/common/sqlite.js';
 
@@ -42,8 +44,8 @@ const runIngest = async (): Promise<void> => {
 
             const result = await ingestMessages({
                 channel   : channel as TextChannel,
-                guildId,
                 continuous: true,
+                guildId,
                 onProgress: async (totalProcessed, batchCount) => {
                     console.log(`Progress: ${totalProcessed} messages ingested (${batchCount} batches)`);
                 },

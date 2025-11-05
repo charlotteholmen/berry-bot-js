@@ -1,6 +1,7 @@
 import {Events, type Interaction} from 'discord.js';
-import type {Client, Command} from '../types';
-import type {Event} from '../types';
+
+import type {Client, Command, Event} from '../types';
+
 
 const execute = async (interaction: Interaction): Promise<void> => {
     if (!interaction.isChatInputCommand()) return;
@@ -26,7 +27,7 @@ const execute = async (interaction: Interaction): Promise<void> => {
 };
 
 export const commandEvent: Event = {
+    execute,
     name: Events.InteractionCreate,
     once: false,
-    execute,
 };

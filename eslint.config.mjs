@@ -1,35 +1,41 @@
-import parser from '@typescript-eslint/parser';
+import js from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import TypeScriptESLint from '@typescript-eslint/eslint-plugin';
-import js from '@eslint/js';
+import parser from '@typescript-eslint/parser';
+import eslintPluginImport from 'eslint-plugin-import';
+import eslintPluginPerfectionist from 'eslint-plugin-perfectionist';
 import globals from 'globals';
-import {fileURLToPath} from 'url';
-import {dirname} from 'path';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 const commonRules = {
     ...js.configs.recommended.rules,
+    ...(eslintPluginImport.flatConfigs.recommended?.rules ?? eslintPluginImport.flatConfigs.recommended),
+    ...(eslintPluginPerfectionist.configs['recommended-natural']?.rules ?? eslintPluginPerfectionist.configs['recommended-natural']),
     'comma-dangle': [2, {
         arrays   : 'always-multiline',
-        imports  : 'never',
         exports  : 'never',
         functions: 'never',
+        imports  : 'never',
         objects  : 'always-multiline',
     }],
-    'comma-spacing'       : [2, {before: false, after: true}],
+    'comma-spacing'       : [2, {after: true, before: false}],
     'eol-last'            : 2,
+    'import/no-unresolved': 0,
     'key-spacing'         : [2, {align: 'colon'}],
+    'new-cap'             : [2, {capIsNew: false}],
     'no-multi-spaces'     : [2, {exceptions: {Property: true, TSPropertySignature: true}}],
     'no-trailing-spaces'  : 2,
     'no-unused-vars'      : 0,
     'object-curly-newline': [2, {
         ObjectExpression: {
-            multiline: true, minProperties: 0, consistent: true,
+            consistent: true, minProperties: 0, multiline: true,
         },
         ObjectPattern: {
-            multiline: true, minProperties: 0, consistent: true,
+            consistent: true, minProperties: 0, multiline: true,
         },
     }],
     'object-curly-spacing': [2, 'never'],
@@ -41,10 +47,11 @@ const commonRules = {
 };
 
 const typescriptRules = {
-    ...TypeScriptESLint.configs.eslintRecommended,
-    ...TypeScriptESLint.configs.recommendedTypeChecked,
-    ...TypeScriptESLint.configs.strictTypeChecked,
-    'new-cap'                                         : [2, {capIsNew: false}],
+    ...(TypeScriptESLint.configs.eslintRecommended?.rules ?? TypeScriptESLint.configs.eslintRecommended),
+    ...(TypeScriptESLint.configs.recommendedTypeChecked?.rules ?? TypeScriptESLint.configs.recommendedTypeChecked),
+    ...(TypeScriptESLint.configs.strictTypeChecked?.rules ?? TypeScriptESLint.configs.strictTypeChecked),
+    ...(eslintPluginImport.flatConfigs.typescript?.rules ?? eslintPluginImport.flatConfigs.typescript),
+    '@stylistic/indent'                               : [2, 4],
     '@typescript-eslint/consistent-type-definitions'  : 2,
     '@typescript-eslint/consistent-type-exports'      : 2,
     '@typescript-eslint/consistent-type-imports'      : 2,
@@ -56,45 +63,54 @@ const typescriptRules = {
     '@typescript-eslint/no-explicit-any'             : 0,
     '@typescript-eslint/no-extraneous-class'         : [2, {allowWithDecorator: true}],
     '@typescript-eslint/no-non-null-assertion'       : 1,
-    'no-use-before-define'                           : 0,
-    '@typescript-eslint/no-use-before-define'        : 0,
     '@typescript-eslint/no-unsafe-assignment'        : 1,
     '@typescript-eslint/no-unsafe-call'              : 1,
-    'no-unused-expressions'                          : 0,
     '@typescript-eslint/no-unused-expressions'       : [2, {allowTernary: true}],
-    '@typescript-eslint/no-unused-vars'              : [2, {varsIgnorePattern: '^_', argsIgnorePattern: '^_'}],
+    '@typescript-eslint/no-unused-vars'              : [2, {argsIgnorePattern: '^_', varsIgnorePattern: '^_'}],
+    '@typescript-eslint/no-use-before-define'        : 0,
     '@typescript-eslint/prefer-reduce-type-parameter': 0,
     '@typescript-eslint/promise-function-async'      : 2,
-    'no-return-await'                                : 0,
     '@typescript-eslint/return-await'                : [2, 'always'],
-    '@stylistic/indent'                              : [2, 4],
+    'no-return-await'                                : 0,
+    'no-unused-expressions'                          : 0,
+    'no-use-before-define'                           : 0,
 };
 
 export default [
     {
         files          : ['**/*.js', '**/*.mjs'],
+        ignores        : ['dist/**', 'node_modules/**'],
         languageOptions: {
-            parserOptions: {ecmaVersion: 'latest', sourceType: 'module'},
             globals      : {...globals.node, ...globals.es2021, ...globals.browser},
+            parserOptions: {ecmaVersion: 'latest', sourceType: 'module'},
         },
-        rules  : {...commonRules},
-        ignores: ['dist/**'],
+        plugins: {
+            '@stylistic' : stylistic,
+            import       : eslintPluginImport,
+            perfectionist: eslintPluginPerfectionist,
+        },
+        rules: {...commonRules},
     },
     {
-        files          : ['**/*.ts', '**/*.tsx'],
-        plugins        : {'@typescript-eslint': TypeScriptESLint, '@stylistic': stylistic},
+        files          : ['**/*.ts'],
+        ignores        : ['dist/**', 'node_modules/**'],
         languageOptions: {
+            globals      : {...globals.node, ...globals.es2021, ...globals.browser},
             parser,
             parserOptions: {
                 ecmaFeatures   : {modules: true},
                 ecmaVersion    : 'latest',
-                sourceType     : 'module',
                 project        : 'tsconfig.eslint.json',
+                sourceType     : 'module',
                 tsconfigRootDir: __dirname,
             },
-            globals: {...globals.node, ...globals.es2021, ...globals.browser},
         },
-        rules  : {...commonRules, ...typescriptRules},
-        ignores: ['dist/**'],
+        plugins: {
+            '@stylistic'        : stylistic,
+            '@typescript-eslint': TypeScriptESLint,
+            import              : eslintPluginImport,
+            perfectionist       : eslintPluginPerfectionist,
+        },
+        rules: {...commonRules, ...typescriptRules},
     },
 ];

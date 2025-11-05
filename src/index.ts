@@ -1,7 +1,9 @@
 import {Client as DiscordClient, Events, GatewayIntentBits} from 'discord.js';
-import {loadCommands, loadEvents, refreshCommands} from './utils.js';
+
 import type {Client} from './types.js';
+
 import {getDatabase} from './common/sqlite.js';
+import {loadCommands, loadEvents, refreshCommands} from './utils.js';
 
 export const initClient = async (token: string): Promise<void> => {
     // Initialize SQLite database

@@ -1,25 +1,25 @@
 import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
 import {randomUUID} from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 export interface Message {
-    id?: string;
-    username: string;
     content: string;
     date: string; // ISO 8601 format
     embedding?: number[]; // text-embedding-3-small vector (1536 dimensions)
+    id?: string;
+    username: string;
 }
 
 export interface MessageInput {
-    username: string;
     content: string;
     date: string; // ISO 8601 format
+    username: string;
 }
 
 export interface MessageRow extends Omit<Message, 'embedding'> {
-    id: string;
     embedding: string; // JSON string in database
+    id: string;
 }
 
 class SQLiteDatabase {
@@ -40,25 +40,10 @@ class SQLiteDatabase {
     }
 
     /**
-     * Get sanitized table name for guild
-     */
-    private getGuildTableName(guildId: string): string {
-        return `guild_${guildId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-    }
-
-    /**
-     * Create table to track last ingested message per guild/channel
-     */
-    private createLastIngestedTable(): void {
-        this.db.exec(`
-            CREATE TABLE IF NOT EXISTS last_ingested (
-                guild_id TEXT NOT NULL,
-                channel_id TEXT NOT NULL,
-                last_message_id TEXT NOT NULL,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (guild_id, channel_id)
-            )
-        `);
+   * Close the database connection
+   */
+    close(): void {
+        this.db.close();
     }
 
     /**
@@ -84,6 +69,144 @@ class SQLiteDatabase {
             CREATE INDEX IF NOT EXISTS idx_${tableName}_date ON ${tableName}(date);
             CREATE INDEX IF NOT EXISTS idx_${tableName}_created_at ON ${tableName}(created_at);
         `);
+    }
+
+    /**
+   * Delete a message by ID
+   */
+    deleteMessage(guildId: string, id: string): boolean {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`DELETE FROM ${tableName} WHERE id = ?`);
+        const result = stmt.run(id);
+        return result.changes > 0;
+    }
+
+    /**
+   * Delete all messages by username
+   */
+    deleteMessagesByUsername(guildId: string, username: string): number {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`DELETE FROM ${tableName} WHERE username = ?`);
+        const result = stmt.run(username);
+        return result.changes;
+    }
+
+    /**
+   * Execute raw SQL (use with caution)
+   */
+    exec(sql: string): void {
+        this.db.exec(sql);
+    }
+
+    /**
+   * Get all embeddings for similarity search (returns id and embedding)
+   */
+    getAllEmbeddings(guildId: string): Array<{ embedding: number[]; id: string; }> {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`SELECT id, embedding FROM ${tableName}`);
+        const rows = stmt.all() as Array<{ embedding: string; id: string; }>;
+        return rows.map(row => ({
+            embedding: JSON.parse(row.embedding),
+            id       : row.id,
+        }));
+    }
+
+    /**
+   * Get all messages with pagination
+   */
+    getAllMessages(guildId: string, limit: number = 100, offset: number = 0): Message[] {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            ORDER BY date DESC
+            LIMIT ? OFFSET ?
+        `);
+
+        const rows = stmt.all(limit, offset) as MessageRow[];
+        return rows.map(row => this.parseMessageRow(guildId, row));
+    }
+
+    /**
+     * Get the last ingested message ID for a guild/channel
+     */
+    getLastIngestedId(guildId: string, channelId: string): null | string {
+        const stmt = this.db.prepare(`
+            SELECT last_message_id 
+            FROM last_ingested 
+            WHERE guild_id = ? AND channel_id = ?
+        `);
+        const result = stmt.get(guildId, channelId) as undefined | {last_message_id: string};
+        return result?.last_message_id ?? null;
+    }
+
+    /**
+   * Get a message by ID
+   */
+    getMessageById(guildId: string, id: string): Message | null {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE id = ?
+        `);
+
+        const row = stmt.get(id) as MessageRow | undefined;
+        return row ? this.parseMessageRow(guildId, row) : null;
+    }
+
+    /**
+   * Get message count
+   */
+    getMessageCount(guildId: string): number {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
+        const result = stmt.get() as { count: number };
+        return result.count;
+    }
+
+    /**
+   * Get message count by username
+   */
+    getMessageCountByUsername(guildId: string, username: string): number {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName} WHERE username = ?`);
+        const result = stmt.get(username) as { count: number };
+        return result.count;
+    }
+
+    /**
+   * Get messages within a date range
+   */
+    getMessagesByDateRange(guildId: string, startDate: string, endDate: string, limit: number = 1000): Message[] {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE date BETWEEN ? AND ?
+            ORDER BY date DESC
+            LIMIT ?
+        `);
+
+        const rows = stmt.all(startDate, endDate, limit) as MessageRow[];
+        return rows.map(row => this.parseMessageRow(guildId, row));
+    }
+
+    /**
+   * Get messages by username
+   */
+    getMessagesByUsername(guildId: string, username: string, limit: number = 100): Message[] {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`
+            SELECT id, username, content, date, embedding
+            FROM ${tableName}
+            WHERE username = ?
+            ORDER BY date DESC
+            LIMIT ?
+        `);
+
+        const rows = stmt.all(username, limit) as MessageRow[];
+        return rows.map(row => this.parseMessageRow(guildId, row));
     }
 
     /**
@@ -144,71 +267,6 @@ class SQLiteDatabase {
     }
 
     /**
-   * Get a message by ID
-   */
-    getMessageById(guildId: string, id: string): Message | null {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`
-            SELECT id, username, content, date, embedding
-            FROM ${tableName}
-            WHERE id = ?
-        `);
-
-        const row = stmt.get(id) as MessageRow | undefined;
-        return row ? this.parseMessageRow(guildId, row) : null;
-    }
-
-    /**
-   * Get messages by username
-   */
-    getMessagesByUsername(guildId: string, username: string, limit: number = 100): Message[] {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`
-            SELECT id, username, content, date, embedding
-            FROM ${tableName}
-            WHERE username = ?
-            ORDER BY date DESC
-            LIMIT ?
-        `);
-
-        const rows = stmt.all(username, limit) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(guildId, row));
-    }
-
-    /**
-   * Get messages within a date range
-   */
-    getMessagesByDateRange(guildId: string, startDate: string, endDate: string, limit: number = 1000): Message[] {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`
-            SELECT id, username, content, date, embedding
-            FROM ${tableName}
-            WHERE date BETWEEN ? AND ?
-            ORDER BY date DESC
-            LIMIT ?
-        `);
-
-        const rows = stmt.all(startDate, endDate, limit) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(guildId, row));
-    }
-
-    /**
-   * Get all messages with pagination
-   */
-    getAllMessages(guildId: string, limit: number = 100, offset: number = 0): Message[] {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`
-            SELECT id, username, content, date, embedding
-            FROM ${tableName}
-            ORDER BY date DESC
-            LIMIT ? OFFSET ?
-        `);
-
-        const rows = stmt.all(limit, offset) as MessageRow[];
-        return rows.map(row => this.parseMessageRow(guildId, row));
-    }
-
-    /**
    * Search messages by content (basic text search)
    */
     searchMessages(guildId: string, searchTerm: string, limit: number = 50): Message[] {
@@ -226,95 +284,6 @@ class SQLiteDatabase {
     }
 
     /**
-   * Get message count
-   */
-    getMessageCount(guildId: string): number {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`);
-        const result = stmt.get() as { count: number };
-        return result.count;
-    }
-
-    /**
-   * Get message count by username
-   */
-    getMessageCountByUsername(guildId: string, username: string): number {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName} WHERE username = ?`);
-        const result = stmt.get(username) as { count: number };
-        return result.count;
-    }
-
-    /**
-   * Delete a message by ID
-   */
-    deleteMessage(guildId: string, id: string): boolean {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`DELETE FROM ${tableName} WHERE id = ?`);
-        const result = stmt.run(id);
-        return result.changes > 0;
-    }
-
-    /**
-   * Delete all messages by username
-   */
-    deleteMessagesByUsername(guildId: string, username: string): number {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`DELETE FROM ${tableName} WHERE username = ?`);
-        const result = stmt.run(username);
-        return result.changes;
-    }
-
-    /**
-   * Update message embedding
-   */
-    updateEmbedding(guildId: string, id: string, embedding: number[]): boolean {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`UPDATE ${tableName} SET embedding = ? WHERE id = ?`);
-        const result = stmt.run(JSON.stringify(embedding), id);
-        return result.changes > 0;
-    }
-
-    /**
-   * Get all embeddings for similarity search (returns id and embedding)
-   */
-    getAllEmbeddings(guildId: string): Array<{ id: string; embedding: number[] }> {
-        const tableName = this.getGuildTableName(guildId);
-        const stmt = this.db.prepare(`SELECT id, embedding FROM ${tableName}`);
-        const rows = stmt.all() as Array<{ id: string; embedding: string }>;
-        return rows.map(row => ({
-            id       : row.id,
-            embedding: JSON.parse(row.embedding),
-        }));
-    }
-
-    /**
-   * Helper function to parse database row to Message object
-   */
-    private parseMessageRow(guildId: string, row: MessageRow): Message {
-        return {
-            id       : row.id,
-            username : row.username,
-            content  : row.content,
-            date     : row.date,
-            embedding: JSON.parse(row.embedding),
-        };
-    }
-
-    /**
-     * Get the last ingested message ID for a guild/channel
-     */
-    getLastIngestedId(guildId: string, channelId: string): string | null {
-        const stmt = this.db.prepare(`
-            SELECT last_message_id 
-            FROM last_ingested 
-            WHERE guild_id = ? AND channel_id = ?
-        `);
-        const result = stmt.get(guildId, channelId) as {last_message_id: string} | undefined;
-        return result?.last_message_id ?? null;
-    }
-
-    /**
      * Set the last ingested message ID for a guild/channel
      */
     setLastIngestedId(guildId: string, channelId: string, messageId: string): void {
@@ -328,17 +297,13 @@ class SQLiteDatabase {
     }
 
     /**
-   * Close the database connection
+   * Update message embedding
    */
-    close(): void {
-        this.db.close();
-    }
-
-    /**
-   * Execute raw SQL (use with caution)
-   */
-    exec(sql: string): void {
-        this.db.exec(sql);
+    updateEmbedding(guildId: string, id: string, embedding: number[]): boolean {
+        const tableName = this.getGuildTableName(guildId);
+        const stmt = this.db.prepare(`UPDATE ${tableName} SET embedding = ? WHERE id = ?`);
+        const result = stmt.run(JSON.stringify(embedding), id);
+        return result.changes > 0;
     }
 
     /**
@@ -347,10 +312,45 @@ class SQLiteDatabase {
     vacuum(): void {
         this.db.exec('VACUUM');
     }
+
+    /**
+     * Create table to track last ingested message per guild/channel
+     */
+    private createLastIngestedTable(): void {
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS last_ingested (
+                guild_id TEXT NOT NULL,
+                channel_id TEXT NOT NULL,
+                last_message_id TEXT NOT NULL,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (guild_id, channel_id)
+            )
+        `);
+    }
+
+    /**
+     * Get sanitized table name for guild
+     */
+    private getGuildTableName(guildId: string): string {
+        return `guild_${guildId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    }
+
+    /**
+   * Helper function to parse database row to Message object
+   */
+    private parseMessageRow(guildId: string, row: MessageRow): Message {
+        return {
+            content  : row.content,
+            date     : row.date,
+            embedding: JSON.parse(row.embedding),
+            id       : row.id,
+            username : row.username,
+        };
+    }
 }
 
 // Export singleton instance
-let dbInstance: SQLiteDatabase | null = null;
+let dbInstance: null | SQLiteDatabase = null;
 
 export const getDatabase = (dbPath?: string): SQLiteDatabase => {
     if (!dbInstance) {

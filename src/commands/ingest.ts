@@ -1,6 +1,9 @@
-import {ChannelType, SlashCommandBuilder} from 'discord.js';
 import type {ChatInputCommandInteraction, FetchMessagesOptions, Message, SlashCommandOptionsOnlyBuilder, TextChannel} from 'discord.js';
+
+import {ChannelType, SlashCommandBuilder} from 'discord.js';
+
 import type {Command} from '../types.js';
+
 import {getDatabase} from '../common/sqlite.js';
 import {sleep} from '../utils.js';
 
@@ -10,18 +13,18 @@ const RATE_LIMIT_DELAY = 1000;
 
 interface IngestOptions {
     channel: TextChannel;
+    continuous?: boolean;
     guildId: string;
     limit?: number;
-    continuous?: boolean;
-    onProgress?: (totalProcessed: number, batchCount: number) => void | Promise<void>;
+    onProgress?: (totalProcessed: number, batchCount: number) => Promise<void> | void;
 }
 
 /**
  * Ingest messages from a channel into the database
  * Can be called programmatically or from Discord command
  */
-export const ingestMessages = async (options: IngestOptions): Promise<{totalProcessed: number; batchCount: number}> => {
-    const {channel, guildId, limit, continuous = false, onProgress} = options;
+export const ingestMessages = async (options: IngestOptions): Promise<{batchCount: number; totalProcessed: number;}> => {
+    const {channel, continuous = false, guildId, limit, onProgress} = options;
 
     const db = getDatabase();
     const channelId = channel.id;
@@ -62,9 +65,9 @@ export const ingestMessages = async (options: IngestOptions): Promise<{totalProc
         if (messagesArray.length > 0) {
             const messagesWithEmbeddings = await Promise.all(
                 messagesArray.map(async (msg) => ({
-                    username: msg.author.username,
                     content : msg.content,
                     date    : msg.createdAt.toISOString(),
+                    username: msg.author.username,
                     // embedding: await getEmbedding(msg.content),
                 }))
             );
@@ -75,7 +78,7 @@ export const ingestMessages = async (options: IngestOptions): Promise<{totalProc
 
         const newLastId = messages.last()?.id;
         console.log(`New last ID: ${newLastId}`);
-        
+
         if (newLastId) {
             lastId = newLastId;
             db.setLastIngestedId(guildId, channelId, newLastId);
@@ -118,7 +121,7 @@ export const ingestMessages = async (options: IngestOptions): Promise<{totalProc
     }
 
     console.log(`\nIngestion complete: ${totalProcessed} total messages, ${batchCount} batches`);
-    return {totalProcessed, batchCount};
+    return {batchCount, totalProcessed};
 };
 
 const execute = async (interaction: ChatInputCommandInteraction): Promise<void> => {
@@ -138,9 +141,9 @@ const execute = async (interaction: ChatInputCommandInteraction): Promise<void> 
 
         const result = await ingestMessages({
             channel,
+            continuous,
             guildId,
             limit,
-            continuous,
             onProgress: async (totalProcessed, batchCount) => {
                 await interaction.editReply(`Processing... ${totalProcessed} messages ingested (${batchCount} batches)`);
             },

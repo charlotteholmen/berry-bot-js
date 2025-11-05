@@ -1,4 +1,4 @@
-import {getDatabase, closeDatabase} from '../src/common/sqlite.js';
+import {closeDatabase, getDatabase} from '../src/common/sqlite.js';
 
 const testDatabase = async (): Promise<void> => {
     try {
