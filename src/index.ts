@@ -1,8 +1,15 @@
 import {Client as DiscordClient, Events, GatewayIntentBits} from 'discord.js';
-import {loadCommands, loadEvents, refreshCommands} from './utils';
-import type {Client} from './types';
+
+import type {Client} from './types.js';
+
+import {getDatabase} from './common/sqlite.js';
+import {loadCommands, loadEvents, refreshCommands} from './utils.js';
 
 export const initClient = async (token: string): Promise<void> => {
+    // Initialize SQLite database
+    getDatabase();
+    console.log('SQLite database initialized');
+
     const client: Client = new DiscordClient({intents: [GatewayIntentBits.MessageContent, GatewayIntentBits.Guilds]});
     client.commands = await loadCommands();
     await loadEvents(client);

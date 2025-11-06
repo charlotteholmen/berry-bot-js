@@ -1,5 +1,5 @@
-import type {ChatInputCommandInteraction, ClientEvents, Collection, Interaction, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder} from 'discord.js';
-import type {Client as DiscordClient} from 'discord.js';
+import type {ChatInputCommandInteraction, ClientEvents, Collection, Client as DiscordClient, Interaction, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder} from 'discord.js';
+
 
 export interface Client extends DiscordClient {
     commands?: Collection<string, unknown>;
@@ -11,35 +11,35 @@ export interface Command {
 }
 
 export interface Event {
+    execute: (interaction: Interaction) => Promise<void>;
     name: keyof ClientEvents;
     once: boolean;
-    execute: (interaction: Interaction) => Promise<void>;
 }
 
 export interface McStatusResp {
-    online: boolean;
     host: string;
-    port: number;
     ip_address: string;
-    version: {
-        name_raw: string;
-        name_clean: string;
-        name_html: string;
-        protocol: number;
-    };
-    players: {
-        online: number;
-        max: number;
-        list: {
-            uuid: string;
-            name_raw: string;
-            name_clean: string;
-            name_html: string;
-        }[];
-    };
     motd: {
-        raw: string;
         clean: string;
         html: string;
+        raw: string;
+    };
+    online: boolean;
+    players: {
+        list: {
+            name_clean: string;
+            name_html: string;
+            name_raw: string;
+            uuid: string;
+        }[];
+        max: number;
+        online: number;
+    };
+    port: number;
+    version: {
+        name_clean: string;
+        name_html: string;
+        name_raw: string;
+        protocol: number;
     };
 }

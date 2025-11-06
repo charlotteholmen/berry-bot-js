@@ -1,15 +1,17 @@
-import {SlashCommandBuilder} from 'discord.js';
-import {DescribeInstancesCommand, EC2Client, StartInstancesCommand, StopInstancesCommand, waitUntilInstanceRunning, type DescribeInstancesCommandOutput} from '@aws-sdk/client-ec2';
 import type {ChatInputCommandInteraction, SlashCommandSubcommandsOnlyBuilder} from 'discord.js';
+
+import {DescribeInstancesCommand, type DescribeInstancesCommandOutput, EC2Client, StartInstancesCommand, StopInstancesCommand, waitUntilInstanceRunning} from '@aws-sdk/client-ec2';
+import {SlashCommandBuilder} from 'discord.js';
+
 import type {Command, McStatusResp} from '../types';
 
 const ec2 = new EC2Client({region: 'us-east-1'});
 
 const ACTIONS = [
-    {name: 'start', description: 'Start game server'},
-    {name: 'stop', description: 'Stop game server'},
-    {name: 'status', description: 'Get game server status'},
-    {name: 'players', description: 'Get players on minecraft server'},
+    {description: 'Start game server', name: 'start'},
+    {description: 'Stop game server', name: 'stop'},
+    {description: 'Get game server status', name: 'status'},
+    {description: 'Get players on minecraft server', name: 'players'},
 ];
 
 const SERVERS = [

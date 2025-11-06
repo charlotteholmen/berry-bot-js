@@ -3,10 +3,11 @@
     "version": "0.0.1",
     "description": "",
     "main": "index.ts",
-    "packageManager": "pnpm@9.15.0",
+    "type": "module",
+    "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
     "scripts": {
-        "start": "npx tsx --env-file=.env.local src/index.ts",
-        "start:prod": "npx tsx --env-file=.env src/index.ts",
+        "start": "tsx --env-file=.env.local src/index.ts",
+        "start:prod": "tsx --env-file=.env src/index.ts",
         "build": "node esbuild.config.mjs",
         "lint": "eslint .",
         "types": "tsc --noEmit"
@@ -21,18 +22,29 @@
         "url": "https://github.com/jhayashi1/berry-bot-js/issues"
     },
     "dependencies": {
-        "@aws-sdk/client-ec2": "^3.651.1",
-        "discord.js": "^14.16.2"
+        "@aws-sdk/client-ec2": "3.925.0",
+        "@aws-sdk/client-opensearchserverless": "3.925.0",
+        "@aws-sdk/credential-provider-node": "3.925.0",
+        "@opensearch-project/opensearch": "3.5.1",
+        "better-sqlite3": "^12.4.1",
+        "discord.js": "14.24.2",
+        "openai": "6.8.1"
     },
     "homepage": "https://github.com/jhayashi1/berry-bot-js#readme",
     "devDependencies": {
-        "@aws-sdk/types": "^3.649.0",
-        "@types/node": "^22.5.5",
-        "@typescript-eslint/eslint-plugin": "^8.6.0",
-        "dotenv": "^16.4.7",
-        "esbuild": "^0.23.1",
-        "eslint": "^9.10.0",
-        "tsx": "^4.19.2",
-        "typescript": "^5.3.3"
+        "@aws-sdk/types": "3.922.0",
+        "@eslint/js": "9.39.1",
+        "@stylistic/eslint-plugin": "5.5.0",
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/node": "24.10.0",
+        "@typescript-eslint/eslint-plugin": "8.46.3",
+        "@typescript-eslint/parser": "8.46.3",
+        "esbuild": "0.25.12",
+        "eslint": "9.39.1",
+        "eslint-plugin-import": "^2.32.0",
+        "eslint-plugin-perfectionist": "^4.15.1",
+        "globals": "16.5.0",
+        "tsx": "^4.20.6",
+        "typescript": "5.9.3"
     }
 }

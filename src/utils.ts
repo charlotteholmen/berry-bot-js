@@ -1,8 +1,11 @@
-import {Collection} from 'discord.js';
-import {REST, Routes} from 'discord.js';
+import {Collection, REST, Routes} from 'discord.js';
+
 import type {Client, Command} from './types';
+
 import * as commands from './commands/index';
 import * as events from './events/index';
+
+export const sleep = async (ms: number): Promise<void> => await new Promise(resolve => setTimeout(resolve, ms));
 
 export const loadCommands = async (): Promise<Collection<string, Command>> => {
     const commandsColl = new Collection<string, Command>();

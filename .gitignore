@@ -5,6 +5,9 @@ dist
 .env*
 
 deploy.sh
+test.ts
+last-id.txt
+**/*.db
 
 *.tar.gz
 **/.terraform/*
@@ -22,3 +25,4 @@ override.tf.json
 .terraform.tfstate.lock.info
 .terraformrc
 terraform.rc
+**/tfplan

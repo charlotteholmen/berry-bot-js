@@ -17,7 +17,6 @@ env:
   AWS_REGION: "us-east-1"
   TOKEN: ${{ secrets.TOKEN }}
   APPLICATION_ID: ${{ secrets.APPLICATION_ID }}
-  TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_NUMBER }}
 
 jobs:
   build: 
