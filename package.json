@@ -26,7 +26,7 @@
         "@aws-sdk/client-opensearchserverless": "3.925.0",
         "@aws-sdk/credential-provider-node": "3.925.0",
         "@opensearch-project/opensearch": "3.5.1",
-        "better-sqlite3": "^12.4.1",
+        "better-sqlite3": "^12.4.6",
         "discord.js": "14.24.2",
         "openai": "6.8.1"
     },
